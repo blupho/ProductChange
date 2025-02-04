@@ -9,35 +9,32 @@ from openpyxl.styles import PatternFill, Font
 def merge_inv_rpt(Inv_List):  
     # report workbook before being saved
     Rpt = Workbook()
+    Rpt.remove(Rpt.active)
     # read all tank inventory excel files
     for Inv_file in Inv_List:
         # open each product inventory workbook
         Inv = openpyxl.load_workbook(Inv_file)
-        Inv_sheet = Inv.active
-        # create a new report worksheet with the name of the product inventory workbook file name    
-        Rpt_sheet = Rpt.create_sheet(Inv_file.replace('.xlsx',''))
-        for i in range (1, Inv_sheet.max_row + 1 ):
-            for j in range (1,Inv_sheet.max_column + 1):
-                # read each cell value from product inventory worksheet            
-                k = Inv_sheet.cell(row = i, column = j).value
-                # write the copied value into the new report worksheet
-                Rpt_sheet.cell(row = i, column = j).value = k
-                # add border to each cell           
-                Rpt_sheet.cell(row = i, column = j).border = Border(
-                                                                        left=Side(style='thin'), 
-                                                                        right=Side(style='thin'), 
-                                                                        top=Side(style='thin'), 
-                                                                        bottom=Side(style='thin')
-                                                                        )       
-        # adjust column width   
-        Rpt_sheet.column_dimensions['A'].width = 15
-        Rpt_sheet.column_dimensions['B'].width = 20
-        Rpt_sheet.column_dimensions['C'].width = 20  
-        Rpt_sheet.column_dimensions['D'].width = 15  
-        Rpt_sheet.column_dimensions['E'].width = 15
-    # delete the extra blank tab
-    del Rpt['Sheet']
-    # delete extra rows and columns from the original tank inventory files
+        for sheet in Inv.sheetnames:
+             # open each product inventory sheet
+            Inv_sheet = Inv[sheet]
+             # copy each product inventory sheet to the report workbook
+            Rpt_sheet = Rpt.create_sheet(Inv_file.name.replace('.xlsx', ''))
+            for row in Inv_sheet.iter_rows(values_only=True):
+                Rpt_sheet.append(row)
+            # apply borders to the report workbook
+            for row in Rpt_sheet.iter_rows(min_row=1, max_row=Rpt_sheet.max_row, min_col=1, max_col=Rpt_sheet.max_column):
+                for cell in row:
+                    cell.border = Border(left=Side(border_style='thin', color='FF000000'),
+                                         right=Side(border_style='thin', color='FF000000'),
+                                         top=Side(border_style='thin', color='FF000000'),
+                                         bottom=Side(border_style='thin', color='FF000000')) 
+                    # adjust column width   
+                    Rpt_sheet.column_dimensions['A'].width = 15
+                    Rpt_sheet.column_dimensions['B'].width = 20
+                    Rpt_sheet.column_dimensions['C'].width = 20  
+                    Rpt_sheet.column_dimensions['D'].width = 15  
+                    Rpt_sheet.column_dimensions['E'].width = 15
+
     for m in range (0,6):
         Rpt.worksheets[m].delete_rows(1,4)
         Rpt.worksheets[m].delete_cols(2)
@@ -49,7 +46,6 @@ def merge_inv_rpt(Inv_List):
             Rpt.worksheets[m][n].fill = PatternFill('solid', start_color='00FFFFCC')
             Rpt.worksheets[m][n].font = Font(bold=True)
     return Rpt
-
 #Streamlit app
 st.set_page_config(layout="wide", page_title="Product Change Report")
 st.write("## Product change report for GL")
