@@ -54,7 +54,7 @@ def merge_inv_rpt(Inv_List):
 st.title("Product Change")
 st.write("## Product change report for GL")
 st.write("Upload current PAS.xlsx, GP.xlsx, GPWC.xlsx, JSTR.xlsx, KMET.xlsx and BOSTCO.xlsx")
-Inv_Rpt = st.file_uploader('Multiple Excel files', type=["xlsx"], accept_multiple_files=True)
+uploaded_files = st.file_uploader('Multiple Excel files', type=["xlsx"], accept_multiple_files=True)
 new_rpt = st.sidebar.text_input("Current Report Date (mm-dd-yyyy):")
 ProductChange = 'Product Change '+ new_rpt + '.xlsx'
 if uploaded_files:
