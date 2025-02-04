@@ -51,15 +51,17 @@ def merge_inv_rpt(Inv_List):
     return Rpt
 
 #Streamlit app
-st.title("Product Change")
+st.set_page_config(layout="wide", page_title="Product Change Report")
 st.write("## Product change report for GL")
 st.write("Upload current PAS.xlsx, GP.xlsx, GPWC.xlsx, JSTR.xlsx, KMET.xlsx and BOSTCO.xlsx")
-uploaded_files = st.file_uploader('Multiple Excel files', type=["xlsx"], accept_multiple_files=True)
 new_rpt = st.sidebar.text_input("Current Report Date (mm-dd-yyyy):")
 ProductChange = 'Product Change '+ new_rpt + '.xlsx'
-if uploaded_files:
-    merged_workbook = merge_inv_rpt(uploaded_files)
+
+Inv_List = st.file_uploader("Choose `.xlsx` files", type="xlsx", accept_multiple_files=True)
+
+if Inv_List:
+    merged_workbook = merge_inv_rpt(Inv_List)
     merged_workbook.save(ProductChange)
     
     with open(ProductChange, "rb") as file:
-        st.download_button(label="Download Merged Workbook", data=file, file_name=output_file, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button(label="Download Merged Workbook", data=file, file_name = ProductChange, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
