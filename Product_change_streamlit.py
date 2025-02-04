@@ -58,7 +58,7 @@ uploaded_files = st.file_uploader('Multiple Excel files', type=["xlsx"], accept_
 new_rpt = st.sidebar.text_input("Current Report Date (mm-dd-yyyy):")
 ProductChange = 'Product Change '+ new_rpt + '.xlsx'
 if uploaded_files:
-    merged_workbook = merge_inv_rpt(Inv_Rpt)
+    merged_workbook = merge_inv_rpt(uploaded_files)
     merged_workbook.save(ProductChange)
     
     with open(ProductChange, "rb") as file:
