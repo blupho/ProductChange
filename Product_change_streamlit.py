@@ -133,7 +133,7 @@ def product_properties(synonyms_wb, changes_df, old_rpt, new_rpt):
 
 #Streamlit app
 st.set_page_config(layout="wide", page_title="Product Change Report")
-st.write("## Product change report for GL")
+st.write("## Gulf Air Product Change Report Generator")
 # current and previous report dates
 new_date = st.sidebar.date_input("Current Report Date (mm-dd-yyyy):",value='today',format='MM-DD-YYYY')
 new_rpt = str(new_date)
