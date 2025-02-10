@@ -104,12 +104,12 @@ def compare_excel_sheets(file1, file2, old_date, new_date):
             for index, row in df1.iterrows():
                 matching_row = df2[(df2['Tank Name'] == row['Tank Name']) & (df2['Location'] == row['Location'])]
                 if matching_row.empty:
-                    # This tank is only in the new report
-                    new_product = row['PRODUCT']
+                    # This tank is only in the old report
+                    old_product = row['PRODUCT']
                     changes.append({
                         'Location': row['Location'],
                         'Tank Name': row['Tank Name'],
-                        old_date: old_product,  # This tank did not exist in the old report
+                        old_date: old_product,  # This tank did not exist in the new report
                         new_date: None
                     })    
     return changes
