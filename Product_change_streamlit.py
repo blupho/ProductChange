@@ -118,13 +118,11 @@ def product_properties(synonyms_wb, changes_df, old_rpt, new_rpt):
     # Load the synonyms file
     synonyms_df = pd.read_excel(synonyms_wb, sheet_name='Chemicals 2024')
 
-    # Convert the relevant columns to lowercase to ensure non case-insensitive merging
-    synonyms_df['TERMINAL_NAME'] = synonyms_df['TERMINAL_NAME'].str.lower()
+    # Convert the relevant product name columns to lowercase to ensure non case-insensitive merging
     synonyms_df['SYNONYM'] = synonyms_df['SYNONYM'].str.lower()
-    changes_df['Location'] = changes_df['Location'].str.lower()
     changes_df[old_rpt] = changes_df[old_rpt].str.lower()
     changes_df[new_rpt] = changes_df[new_rpt].str.lower()
-
+    
     # Merge LL/HL and OLD Status of Old Product 
     old_product_data = synonyms_df[['TERMINAL_NAME', 'SYNONYM', 'Service', 'OLD']]
     old_product_data.rename(columns={'TERMINAL_NAME': 'Location', 'SYNONYM': old_rpt, 'Service': 'Previous HL/LL Service','OLD':'Previous OLD Status'}, inplace=True)
