@@ -117,20 +117,28 @@ def compare_excel_sheets(file1, file2, old_date, new_date):
 def product_properties(synonyms_wb, changes_df, old_rpt, new_rpt):
     # Load the synonyms file
     synonyms_df = pd.read_excel(synonyms_wb, sheet_name='Chemicals 2024')
-    # Merge LL/HL and OLD Status of Old Product, note the merge is case sensitive. 
+
+    # Convert the relevant columns to lowercase to ensure non case-insensitive merging
+    synonyms_df['TERMINAL_NAME'] = synonyms_df['TERMINAL_NAME'].str.lower()
+    synonyms_df['SYNONYM'] = synonyms_df['SYNONYM'].str.lower()
+    changes_df['Location'] = changes_df['Location'].str.lower()
+    changes_df[old_rpt] = changes_df[old_rpt].str.lower()
+    changes_df[new_rpt] = changes_df[new_rpt].str.lower()
+
+    # Merge LL/HL and OLD Status of Old Product 
     old_product_data = synonyms_df[['TERMINAL_NAME', 'SYNONYM', 'Service', 'OLD']]
     old_product_data.rename(columns={'TERMINAL_NAME': 'Location', 'SYNONYM': old_rpt, 'Service': 'Previous HL/LL Service','OLD':'Previous OLD Status'}, inplace=True)
-    merged_df = pd.merge(changes_df, old_product_data, on=['Location',old_rpt], how='left')
+    merged_df = pd.merge(changes_df, old_product_data, on=['Location', old_rpt], how='left')
 
     # Merge LL/HL and OLD Status of New Product
     new_product_data = synonyms_df[['TERMINAL_NAME', 'SYNONYM', 'Service', 'OLD']]
-    new_product_data.rename(columns={'TERMINAL_NAME': 'Location','SYNONYM': new_rpt, 'Service': 'New HL/LL Service','OLD':'New OLD Status'}, inplace=True)
-    merged_df = pd.merge(merged_df, new_product_data, on=['Location',new_rpt], how='left')
+    new_product_data.rename(columns={'TERMINAL_NAME': 'Location', 'SYNONYM': new_rpt, 'Service': 'New HL/LL Service','OLD':'New OLD Status'}, inplace=True)
+    merged_df = pd.merge(merged_df, new_product_data, on=['Location', new_rpt], how='left')
+    
     # Rearrange the columns to insert the new ones behind the Old Product and New Product columns
     columns_order = ['Location', 'Tank Name', old_rpt, 'Previous HL/LL Service', 'Previous OLD Status', new_rpt, 'New HL/LL Service', 'New OLD Status']
     merged_df = merged_df[columns_order]
     return merged_df
-
 #Streamlit app
 st.set_page_config(layout="wide", page_title="Product Change Report")
 st.write("## Gulf Air Product Change Report Generator")
