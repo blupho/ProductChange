@@ -143,7 +143,7 @@ st.write("## Gulf Air Product Change Report Generator")
 # current and previous report dates
 new_date = st.sidebar.date_input("Current Report Date (mm-dd-yyyy):",value='today',format='MM-DD-YYYY')
 new_rpt = new_date.strftime("%m-%d-%Y") # MM-DD-YYYY
-old_date = st.sidebar.date_input("Previous Report Date (mm-dd-yyyy):",value=new_date-7,format='MM-DD-YYYY')
+old_date = st.sidebar.date_input("Previous Report Date (mm-dd-yyyy):",value=new_date-timedelta(days=7),format='MM-DD-YYYY')
 old_rpt = old_date.strftime("%m-%d-%Y") # MM-DD-YYYY
 st.write("Upload current PAS.xlsx, GP.xlsx, GPWC.xlsx, JSTR.xlsx, KMET.xlsx and BOSTCO.xlsx")
 new_rpt_wb = st.file_uploader("Choose `.xlsx` files", type="xlsx", accept_multiple_files=True)
