@@ -166,14 +166,14 @@ if st.button("Generate Report"):
     st.subheader("Detected Changes")
     # if there is no change, display a message and provide link to download the current week inventory
     if changes_df.empty:
-        st.write("No changes detected.")
+        st.write("No product changes detected.")
+        # Provide a button to download the result as an Excel file
         with open(new_rpt_excel, "rb") as file:
             st.download_button(label="Download Current Week Tank Inventory", data=file, file_name = ProductChange, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
-        # Get the product properties
+        # Get the properties of the changed products 
         merged_df = product_properties(synonyms_wb, changes_df, old_rpt, new_rpt)
         st.dataframe(merged_df)
-        # Provide a button to download the result as an Excel file
         output_file = ProductChange
         merged_df.to_excel(output_file, index=False)
         with pd.ExcelWriter(new_rpt_excel, engine='openpyxl', mode='a') as writer:
