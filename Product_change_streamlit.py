@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime, timedelta
 import openpyxl
 import pandas as pd
-import numpy as np
 from openpyxl import Workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
