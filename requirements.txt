@@ -1,4 +1,2 @@
 openpyxl
 pandas
-numpy
-streamlit
