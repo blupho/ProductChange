@@ -137,6 +137,48 @@ def product_properties(synonyms_wb, changes_df, old_rpt, new_rpt):
     columns_order = ['Location', 'Tank Name', old_rpt, 'Previous HL/LL Service', 'Previous OLD Status', new_rpt, 'New HL/LL Service', 'New OLD Status']
     merged_df = merged_df[columns_order]
     return merged_df
+
+def find_products_without_synonym(new_rpt_excel, synonyms_wb):
+    # Seek synonyms_wb back to the beginning to allow re-reading
+    if hasattr(synonyms_wb, 'seek'):
+        synonyms_wb.seek(0)
+    
+    synonyms_df = pd.read_excel(synonyms_wb, sheet_name='Chemicals 2024')
+    
+    # Store clean uppercase (terminal, synonym) pairs
+    synonyms_set = set()
+    for _, row in synonyms_df.iterrows():
+        term = str(row['TERMINAL_NAME']).strip().upper() if pd.notna(row['TERMINAL_NAME']) else ""
+        syn = str(row['SYNONYM']).strip().upper() if pd.notna(row['SYNONYM']) else ""
+        if term and syn:
+            synonyms_set.add((term, syn))
+            
+    xls = pd.ExcelFile(new_rpt_excel)
+    missing_synonyms = []
+    
+    # Check only the first 6 sheets (terminals)
+    for sheet_name in xls.sheet_names[:6]:
+        df = pd.read_excel(xls, sheet_name=sheet_name)
+        if 'PRODUCT' in df.columns:
+            for _, row in df.iterrows():
+                product = row['PRODUCT']
+                if pd.notna(product):
+                    prod_str = str(product).strip()
+                    # Exclude empty products and common empty cell fillers
+                    if prod_str and prod_str.upper() not in ['', 'EMPTY', 'OOS', 'OUT OF SERVICE', 'VACANT', 'NONE']:
+                        loc_upper = str(sheet_name).strip().upper()
+                        prod_upper = prod_str.upper()
+                        if (loc_upper, prod_upper) not in synonyms_set:
+                            missing_synonyms.append({
+                                'Location': sheet_name,
+                                'Product': prod_str
+                            })
+                            
+    if missing_synonyms:
+        return pd.DataFrame(missing_synonyms).drop_duplicates().reset_index(drop=True)
+    else:
+        return pd.DataFrame(columns=['Location', 'Product'])
+
 #Streamlit app
 st.set_page_config(layout="wide", page_title="Product Change Report")
 st.write("## Gulf Air Product Change Report Generator")
@@ -169,6 +211,10 @@ if st.button("Generate Report"):
         # Provide a button to download the result as an Excel file
         with open(new_rpt_excel, "rb") as file:
             st.download_button(label="Download Current Week Tank Inventory", data=file, file_name = ProductChange, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+        # OOS and RTS are empty when changes_df is empty
+        oos_display = pd.DataFrame(columns=['Location', 'Tank Name', 'Previous Product'])
+        rts_display = pd.DataFrame(columns=['Location', 'Tank Name', 'Current Product'])
     else:
         # Get the properties of the changed products 
         merged_df = product_properties(synonyms_wb, changes_df, old_rpt, new_rpt)
@@ -201,3 +247,56 @@ if st.button("Generate Report"):
                 file_name=output_file,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+        
+        # OOS: Existed in old report (old_rpt is not null) but not in new report (new_rpt is null)
+        oos_df = merged_df[merged_df[new_rpt].isna() | (merged_df[new_rpt] == '')]
+        oos_display = oos_df[['Location', 'Tank Name', old_rpt]].rename(columns={old_rpt: 'Previous Product'})
+        
+        # RTS: Not in old report (old_rpt is null) but in new report (new_rpt is not null)
+        rts_df = merged_df[merged_df[old_rpt].isna() | (merged_df[old_rpt] == '')]
+        rts_display = rts_df[['Location', 'Tank Name', new_rpt]].rename(columns={new_rpt: 'Current Product'})
+
+    # Get products without synonyms from current week's sheets
+    missing_syn_df = find_products_without_synonym(new_rpt_excel, synonyms_wb)
+
+    # Display three tables as summary reports
+    st.markdown("---")
+    st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>📊 Summary Reports</h2>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div style='background-color: #FEF2F2; border-left: 5px solid #EF4444; padding: 15px; border-radius: 4px; margin-bottom: 10px;'>
+            <h3 style='margin: 0; color: #991B1B;'>🚫 Tanks Out of Service</h3>
+            <p style='margin: 5px 0 0 0; color: #7F1D1D; font-size: 14px;'>Tanks in previous report but missing in current report</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if not oos_display.empty:
+            st.dataframe(oos_display, use_container_width=True, hide_index=True)
+        else:
+            st.success("No tanks moved Out of Service.")
+            
+    with col2:
+        st.markdown("""
+        <div style='background-color: #F0FDF4; border-left: 5px solid #22C55E; padding: 15px; border-radius: 4px; margin-bottom: 10px;'>
+            <h3 style='margin: 0; color: #166534;'>🔄 Tanks Returned to Service</h3>
+            <p style='margin: 5px 0 0 0; color: #14532D; font-size: 14px;'>Tanks not in previous report but in current report</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if not rts_display.empty:
+            st.dataframe(rts_display, use_container_width=True, hide_index=True)
+        else:
+            st.success("No tanks returned to Service.")
+            
+    with col3:
+        st.markdown("""
+        <div style='background-color: #FFF7ED; border-left: 5px solid #F97316; padding: 15px; border-radius: 4px; margin-bottom: 10px;'>
+            <h3 style='margin: 0; color: #9A3412;'>⚠️ New Products without Synonym</h3>
+            <p style='margin: 5px 0 0 0; color: #7C2D12; font-size: 14px;'>Products in current report not in Synonyms.xlsx</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if not missing_syn_df.empty:
+            st.dataframe(missing_syn_df, use_container_width=True, hide_index=True)
+        else:
+            st.success("All products have valid synonyms!")
