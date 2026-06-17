@@ -212,9 +212,10 @@ if st.button("Generate Report"):
         with open(new_rpt_excel, "rb") as file:
             st.download_button(label="Download Current Week Tank Inventory", data=file, file_name = ProductChange, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         
-        # OOS and RTS are empty when changes_df is empty
+        # OOS, RTS, and HL to LL are empty when changes_df is empty
         oos_display = pd.DataFrame(columns=['Location', 'Tank Name', 'Previous Product'])
         rts_display = pd.DataFrame(columns=['Location', 'Tank Name', 'Current Product'])
+        hl_to_ll_display = pd.DataFrame(columns=['Location', 'Tank Name', 'Previous Product', 'Current Product'])
     else:
         # Get the properties of the changed products 
         merged_df = product_properties(synonyms_wb, changes_df, old_rpt, new_rpt)
@@ -256,14 +257,22 @@ if st.button("Generate Report"):
         rts_df = merged_df[merged_df[old_rpt].isna() | (merged_df[old_rpt] == '')]
         rts_display = rts_df[['Location', 'Tank Name', new_rpt]].rename(columns={new_rpt: 'Current Product'})
 
+        # HL to LL: Previous HL/LL Service was HL and New HL/LL Service is LL
+        prev_service = merged_df['Previous HL/LL Service'].astype(str).str.strip().str.upper()
+        new_service = merged_df['New HL/LL Service'].astype(str).str.strip().str.upper()
+        hl_to_ll_df = merged_df[(prev_service == 'HL') & (new_service == 'LL')]
+        hl_to_ll_display = hl_to_ll_df[['Location', 'Tank Name', old_rpt, new_rpt]].rename(
+            columns={old_rpt: 'Previous Product', new_rpt: 'Current Product'}
+        )
+
     # Get products without synonyms from current week's sheets
     missing_syn_df = find_products_without_synonym(new_rpt_excel, synonyms_wb)
 
-    # Display three tables as summary reports
+    # Display summary reports as columns/tables
     st.markdown("---")
     st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>📊 Summary Reports</h2>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
@@ -290,6 +299,18 @@ if st.button("Generate Report"):
             st.success("No tanks returned to Service.")
             
     with col3:
+        st.markdown("""
+        <div style='background-color: #EFF6FF; border-left: 5px solid #3B82F6; padding: 15px; border-radius: 4px; margin-bottom: 10px;'>
+            <h3 style='margin: 0; color: #1E3A8A;'>💧 HL to LL Service Changes</h3>
+            <p style='margin: 5px 0 0 0; color: #1E40AF; font-size: 14px;'>Tanks changing service from Heavy Liquid to Light Liquid</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if not hl_to_ll_display.empty:
+            st.dataframe(hl_to_ll_display, use_container_width=True, hide_index=True)
+        else:
+            st.success("No HL to LL service changes.")
+
+    with col4:
         st.markdown("""
         <div style='background-color: #FFF7ED; border-left: 5px solid #F97316; padding: 15px; border-radius: 4px; margin-bottom: 10px;'>
             <h3 style='margin: 0; color: #9A3412;'>⚠️ New Products without Synonym</h3>
