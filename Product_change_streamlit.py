@@ -181,6 +181,34 @@ def find_products_without_synonym(new_rpt_excel, synonyms_wb):
 
 #Streamlit app
 st.set_page_config(layout="wide", page_title="Product Change Report")
+
+# Custom CSS to style the download buttons red
+st.markdown("""
+    <style>
+    div[data-testid="stDownloadButton"] button {
+        background-color: #EF4444 !important;
+        color: white !important;
+        border: 1px solid #EF4444 !important;
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    div[data-testid="stDownloadButton"] button:hover {
+        background-color: #DC2626 !important;
+        border-color: #DC2626 !important;
+        color: white !important;
+    }
+    div[data-testid="stDownloadButton"] button:active {
+        background-color: #B91C1C !important;
+        border-color: #B91C1C !important;
+        color: white !important;
+    }
+    div[data-testid="stDownloadButton"] button:focus {
+        box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.5) !important;
+        border-color: #EF4444 !important;
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.write("## Gulf Air Product Change Report Generator")
 # current and previous report dates
 new_date = st.sidebar.date_input("Current Report Date (mm-dd-yyyy):",value='today',format='MM-DD-YYYY')
