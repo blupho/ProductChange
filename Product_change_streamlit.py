@@ -114,6 +114,19 @@ def compare_excel_sheets(file1, file2, old_date, new_date):
                     })    
     return changes
 
+def normalize_service(value):
+    """Map a Synonyms.xlsx 'Service' value to 'HL' or 'LL'.
+
+    The workbook stores the long form ('Heavy Liquid' / 'Light Liquid'), while the
+    summary compares against the short codes, so both spellings must normalize.
+    Anything else ('-', 'CHECK', blank) is returned unchanged."""
+    service = str(value).strip().upper()
+    if service in ('HL', 'HEAVY LIQUID') or service.startswith('HEAVY'):
+        return 'HL'
+    if service in ('LL', 'LIGHT LIQUID') or service.startswith('LIGHT'):
+        return 'LL'
+    return service
+
 def product_properties(synonyms_wb, changes_df, old_rpt, new_rpt):
     # Load the synonyms file
     synonyms_df = pd.read_excel(synonyms_wb, sheet_name='Chemicals 2024')
@@ -286,9 +299,10 @@ if st.button("Generate Report"):
         rts_display = rts_df[['Location', 'Tank Name', new_rpt]].rename(columns={new_rpt: 'Current Product'})
 
         # HL to LL: Previous HL/LL Service was HL and New HL/LL Service is LL
-        prev_service = merged_df['Previous HL/LL Service'].astype(str).str.strip().str.upper()
-        new_service = merged_df['New HL/LL Service'].astype(str).str.strip().str.upper()
-        hl_to_ll_df = merged_df[(prev_service == 'HL') & (new_service == 'LL')]
+        hl_to_ll_df = merged_df[
+            (merged_df['Previous HL/LL Service'].map(normalize_service) == 'HL') &
+            (merged_df['New HL/LL Service'].map(normalize_service) == 'LL')
+        ]
         hl_to_ll_display = hl_to_ll_df[['Location', 'Tank Name', old_rpt, new_rpt]].rename(
             columns={old_rpt: 'Previous Product', new_rpt: 'Current Product'}
         )
